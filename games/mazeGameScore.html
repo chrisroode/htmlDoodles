@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html><!-- This stuff is just setting up a canvas on the HTML document.-->
+<head>
+    <title>It's Not Pacman</title>
+    <style>
+    body {
+        background-color: black;
+    }
+    </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<script>
+
+class Vec2d {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+}
+
+class Cell {
+    constructor() {
+        this.walls = new Array();
+        this.walls.push(1);
+        this.walls.push(1);
+        this.walls.push(1);
+        this.walls.push(1);
+        this.visited = 0;
+    }
+}
+
+class Maze {
+    neighbor(index,direction) {
+        let newIndex = 0;
+        switch (direction) {
+            case 0:
+                newIndex = index-this.width;
+                break;
+            case 1:
+                newIndex = index+1;
+                break;
+            case 2:
+                newIndex = index+this.width;
+                break;
+            case 3:
+                newIndex = index-1;
+                break;
+            default:
+                break;
+        }
+        return newIndex;
+    }
+
+    removeWall(index,direction) {
+        let retVal = false;
+        if (this.cells[index].walls[direction] == 1) {
+            retVal = true;
+            this.cells[index].walls[direction] = 0;
+            switch (direction) {
+                case 0:
+                    this.cells[index-this.width].walls[2]=0;
+                    break;
+                case 1:
+                    this.cells[index+1].walls[3]=0;
+                    break;
+                case 2:
+                    this.cells[index+this.width].walls[0]=0;
+                    break;
+                case 3:
+                    this.cells[index-1].walls[1]=0;
+                    break;
+                default:
+                    break;
+            }
+        }
+        return retVal;
+    }
+
+    constructor(width,height) {
+        this.width = width;
+        this.height = height;
+        this.cells = new Array();
+        for (let i=0; i<width*height; i++) {
+            let newCell = new Cell();
+            //Define walls top, right, bottom left
+            if (i<width)               newCell.walls[0] = -1;
+            if (i%width==width-1)      newCell.walls[1] = -1;
+            if (i+width>=width*height) newCell.walls[2] = -1;
+            if (i%width==0)            newCell.walls[3] = -1;
+            this.cells.push(newCell);
+        }
+        // Make Maze
+        let mazeCoord = Math.trunc(Math.random()*width*height);
+        let stack = new Array(); //counts our path.
+        stack.push(mazeCoord);
+        do {
+            // Find the possible directions
+            let cell = stack[stack.length-1];
+            let dirs = new Array();
+            for (var i=0; i<4; i++) {
+                if (this.cells[cell].walls[i] == 1) {
+                    let v = 1;
+                    switch (i) {
+                        case 0:
+                            v = this.cells[cell-this.width].visited;
+                            break;
+                        case 1:
+                            v = this.cells[cell+1].visited;
+                            break;
+                        case 2:
+                            v = this.cells[cell+this.width].visited;
+                            break;
+                        case 3:
+                            v = this.cells[cell-1].visited;
+                            break;
+                        default:
+                            break;
+                    }
+                    if (v==0) dirs.push(i);
+                }
+            }
+            if (dirs.length>0) {
+                let dir = dirs[Math.trunc(Math.random()*12)%dirs.length];
+                this.removeWall(cell,dir);
+                switch (dir) {
+                    case 0:
+                        stack.push(cell-this.width);
+                        break;
+                    case 1:
+                        stack.push(cell+1);
+                        break;
+                    case 2:
+                        stack.push(cell+this.width);
+                        break;
+                    case 3:
+                        stack.push(cell-1);
+                        break;
+                }
+            }
+            else {
+                stack.pop();
+            }
+            this.cells[cell].visited = 1;
+        } while (stack.length > 0 && stack.length < width*height);
+
+        for (let i=0; i<15; i++) {
+            if (this.removeWall(Math.trunc(Math.random()*this.width*this.height),
+                            Math.trunc(Math.random()*4))) i--;
+        }
+    }
+
+    checkCollision(x,y,direction) {
+        var retVal = false;
+        var index = y*this.width + x;
+        if (this.cells[index].walls[direction]==0) retVal = true;
+        return retVal;
+    }
+} //class Maze
+
+
+var canvas = document.getElementById("canvas");
+var context = canvas.getContext("2d");
+var scale = new Vec2d(40,40);
+var grid = new Vec2d(6,3);
+
+var player = new Vec2d(0,0);
+var playerTarget = new Vec2d(0,0);
+var maze = new Maze(grid.x, grid.y);
+var gameScore=0;
+
+function reset() {
+    grid.x ++;
+    grid.y = Math.trunc(grid.x*0.5625);
+    //player.x = 0; player.y = 0;
+    //playerTarget.x = 0; playerTarget.y = 0;
+    maze = new Maze(grid.x, grid.y);
+    maze.cells[playerTarget.y*grid.x+playerTarget.x].visited=0;
+}
+
+function draw() {
+    canvas.width = window.innerWidth*0.9;
+    canvas.height = window.innerHeight*0.9;
+    scale.x = canvas.width/(grid.x+1);
+    scale.y = Math.min(canvas.height/(grid.y+1),scale.x);
+    context.clearRect(0,0,canvas.width,canvas.height);
+    context.transform(scale.x,0,0,scale.y,scale.x/2,scale.y*0.9);
+
+    context.beginPath();
+    context.moveTo(0,grid.y);
+    context.lineTo(0,0);
+    context.lineTo(grid.x,0);
+    context.lineTo(grid.x,grid.y);
+    context.lineTo(0,grid.y);
+
+    for (let i=0; i<grid.x; i++) {
+        for (let j=0; j<grid.y; j++) {
+            if (maze.cells[j*grid.x+i].walls[2]) {
+                context.moveTo(i,j+1);
+                context.lineTo(i+1,j+1);
+            }
+            if (maze.cells[j*grid.x+i].walls[1]) {
+                context.moveTo(i+1,j);
+                context.lineTo(i+1,j+1);
+            }
+        }
+    }
+    context.strokeStyle = "#8844ff";
+    context.lineWidth = .15 ;
+    context.stroke();
+    context.strokeStyle = "#0000ff";
+    context.lineWidth = .1 ;
+    context.stroke();
+
+
+    for (let i=0; i<grid.x; i++) {
+        for (let j=0; j<grid.y; j++) {
+            if (maze.cells[j*grid.x+i].visited==1) {
+                context.fillStyle = "#ffff88";
+                context.fillRect(i+0.4,j+0.4,0.2,0.2);
+            } else {
+                context.fillStyle = "#444444";
+                context.fillRect(i+0.4,j+0.4,0.2,0.2);
+            }
+        }
+    }
+
+
+    player.x = (player.x*2+playerTarget.x)/3;
+    player.y = (player.y*2+playerTarget.y)/3;
+
+
+    context.font = '1px sans-serif';
+    context.fillStyle = "#88ddff";
+    context.fillText('score: '+gameScore, 0, 0);
+
+    context.fillStyle = "#ff5522";
+    context.fillRect(player.x+0.25,player.y+0.25,.5,.5);
+
+}
+
+function keyInput(e) {
+    let _x = playerTarget.x;
+    let _y = playerTarget.y;
+    switch (e.keyCode) {
+        case 39: //right
+            if (maze.checkCollision(_x,_y,1)) playerTarget.x++;
+
+            break;
+        case 37: //left
+            if (maze.checkCollision(_x,_y,3)) playerTarget.x--;
+
+            break;
+        case 38: //up
+            if (maze.checkCollision(_x,_y,0)) playerTarget.y--;
+
+            break;
+        case 40: //down
+            if (maze.checkCollision(_x,_y,2)) playerTarget.y++;
+
+            break;
+        default:
+            break;
+    }
+    if (maze.cells[playerTarget.y*grid.x+playerTarget.x].visited == 1) gameScore++; else gameScore--;
+    maze.cells[playerTarget.y*grid.x+playerTarget.x].visited = 0;
+    let score = 0;
+    maze.cells.forEach(e => {score += e.visited;});
+    if (score == 0) reset();
+}
+
+
+window.addEventListener("keydown",keyInput);
+window.setInterval(draw,15);
+draw();
+</script>
+
+</body>
+</html>
