@@ -1,0 +1,878 @@
+<!doctype html>
+<!-- ===================================================
+ Calendar Generator
+========================================================
+COPYRIGHT
+The source in this file is protected under the MIT License
+Please read the details from one of the many sources on <thead>
+internet before doing things.
+
+DESCRIPTION
+This single file document uses Javascript, HTML, and CSS to
+create a minimal interface calendar generator.  The calendar
+can be copy pasted, with the intended destination be a word
+processor, allowing for simplification of setting up similar
+documents through other more complicated means.
+
+The other intention of these types of
+
+You are free to make modifications to this document for your
+own personalization, as long as you follow the MIT license
+terms stated above. Highlighting the code is provided as-is
+with no liability or warrantee provided by Chris Roode, the
+original author.
+
+For details on how this code was created, feel free to watch
+the associated youtube video:
+
+and find the original source on github:
+
+
+Hope this helps
+-->
+
+<!--
+Video Outline
+- Introduction
+- Look at the problem conceptually.
+      - Needs to be self contained: go over the src=js lock
+      - Need to generate numbers for the days in the month.
+            - the size of the table doesn't change...+- one row.
+            - The biggest task is putting the correct numbers for the days.
+      - Finding the day of the week, going over date math.
+- Look at the specific items that need to be used
+      - the JS Date object.
+            - Day of the week
+      - For Loops
+      - accessing document elements by ID.
+      - Constructing a string from multiple elements.
+- Create the code, step by step.
+      - Start with a template file.
+      - HTML: Generate a table
+      - HTML: generate a form
+      - JS: respond to entry in the form
+      - JS: Creating arrays, and updating id elements in the function.
+      - JS: Function to select the year exactly for copying.
+      - CSS: Making the style work well for copying into MS Word.
+      - CSS: Updating the table width.
+      - CSS: updating the table height...just for the heck of it.
+-->
+
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Calendar Maker</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Calendar Generator">
+  <meta name="author" content="Chris Roode">
+  <style>
+  body {
+    margin-left: 40px;
+    margin-top: 40px;
+    background-color: #ffffff;
+  }
+  table {
+    width: 7in;
+    border: 1px solid black;
+    border-collapse: collapse;
+  }
+  td {
+    height: 1in;
+    width: 1in;
+    border: 1px solid black;
+    border-collapse: collapse;
+    vertical-align: top;
+    text-align: left;
+  }
+  th {
+    border: 1px solid black;
+    border-collapse: collapse;
+  }
+  </style>
+</head>
+<body>
+  <p><h1>Calendar Greg
+  <svg width=50 height=50>
+        <circle cx=25 cy=25 r=24 stroke="#603000" stroke-width=2 fill="#ff8000" />
+        <line y1="23" x1="12" y2="23" x2="23" stroke="#603000" stroke-width=2 />
+        <line y1="23" x1="27" y2="23" x2="38" stroke="#603000" stroke-width=2 />
+        <circle cx=21 cy=24 r=2  fill="#603000" />
+        <circle cx=34 cy=24 r=2  fill="#603000" />
+        <path d="M16 38 l14 0 l4 -2" stroke="#603000" stroke-width=2 fill="#ff8000" />
+  </svg>
+</h1></p>
+<p>
+<form onsubmit="return false">
+  Enter Year:<input type="number" id="year" value="1234" oninput="updateYear()" min="1000" max="9999">
+  Calendar Width:<input type="number" id="width" value="7" oninput="setTableWidth()" min="0.5" max="100.0" step="0.125">
+  Cell Height:<input type="number" id="height" value="1" oninput="setTableHeight()" min="0.25" max="100.0" step="0.125">
+  <select id="units"><option value="in">in</option><option value="cm">cm</option></select>
+  <input type="button" id="copy" value="select" onclick="copyCalendar()"> Then press ctrl->c to copy
+</form>
+</p>
+<div id="copyText">
+<p></p><p><h1>January <span id="0Text">2021</span></h1></p>
+<p><table class="month">
+  <tr id="label">
+    <th>Sunday</th>
+    <th>Monday</th>
+    <th>Tuesday</th>
+    <th>Wednesday</th>
+    <th>Thursday</th>
+    <th>Friday</th>
+    <th>Saturday</th>
+  </tr>
+  <tr>
+    <td class="day"><span id="0-0">1</span></td>
+    <td class="day"><span id="0-1">2</span></td>
+    <td class="day"><span id="0-2">3</span></td>
+    <td class="day"><span id="0-3">4</span></td>
+    <td class="day"><span id="0-4">5</span></td>
+    <td class="day"><span id="0-5">6</span></td>
+    <td class="day"><span id="0-6">7</span></td>
+  </tr>
+  <tr>
+    <td class="day"><span id="0-7">8</span></td>
+    <td class="day"><span id="0-8">9</span></td>
+    <td class="day"><span id="0-9">10</span></td>
+    <td class="day"><span id="0-10">11</span></td>
+    <td class="day"><span id="0-11">12</span></td>
+    <td class="day"><span id="0-12">13</span></td>
+    <td class="day"><span id="0-13">14</span></td>
+  </tr>
+  <tr>
+    <td class="day"><span id="0-14">15</span></td>
+    <td class="day"><span id="0-15">16</span></td>
+    <td class="day"><span id="0-16">17</span></td>
+    <td class="day"><span id="0-17">18</span></td>
+    <td class="day"><span id="0-18">19</span></td>
+    <td class="day"><span id="0-19">20</span></td>
+    <td class="day"><span id="0-20">21</span></td>
+  </tr>
+  <tr>
+    <td class="day"><span id="0-21">22</span></td>
+    <td class="day"><span id="0-22">23</span></td>
+    <td class="day"><span id="0-23">24</span></td>
+    <td class="day"><span id="0-24">25</span></td>
+    <td class="day"><span id="0-25">26</span></td>
+    <td class="day"><span id="0-26">27</span></td>
+    <td class="day"><span id="0-27">28</span></td>
+  </tr>
+  <tr>
+    <td class="day"><span id="0-28">29</span></td>
+    <td class="day"><span id="0-29">30</span></td>
+    <td class="day"><span id="0-30">31</span></td>
+    <td class="day"><span id="0-31">1</span></td>
+    <td class="day"><span id="0-32">2</span></td>
+    <td class="day"><span id="0-33">3</span></td>
+    <td class="day"><span id="0-34">4</span></td>
+  </tr>
+  <tr>
+    <td class="day"><span id="0-35">5</span></td>
+    <td class="day"><span id="0-36">6</span></td>
+    <td class="day"><span id="0-37">7</span></td>
+    <td class="day"><span id="0-38">8</span></td>
+    <td class="day"><span id="0-39">9</span></td>
+    <td class="day"><span id="0-40">10</span></td>
+    <td class="day"><span id="0-41">11</span></td>
+  </tr>
+</table>
+</p>
+
+<p></p><p><h1>February <span id="1Text">2021</span></h1></p>
+<p><table class="month">
+  <tr>
+    <th>Sunday</th>
+    <th>Monday</th>
+    <th>Tuesday</th>
+    <th>Wednesday</th>
+    <th>Thursday</th>
+    <th>Friday</th>
+    <th>Saturday</th></tr><tr>
+    <td class="day"><span id="1-0">1</span></td>
+    <td class="day"><span id="1-1">2</span></td>
+    <td class="day"><span id="1-2">3</span></td>
+    <td class="day"><span id="1-3">4</span></td>
+    <td class="day"><span id="1-4">5</span></td>
+    <td class="day"><span id="1-5">6</span></td>
+    <td class="day"><span id="1-6">7</span></td></tr><tr>
+    <td class="day"><span id="1-7">8</span></td>
+    <td class="day"><span id="1-8">9</span></td>
+    <td class="day"><span id="1-9">10</span></td>
+    <td class="day"><span id="1-10">11</span></td>
+    <td class="day"><span id="1-11">12</span></td>
+    <td class="day"><span id="1-12">13</span></td>
+    <td class="day"><span id="1-13">14</span></td></tr><tr>
+    <td class="day"><span id="1-14">15</span></td>
+    <td class="day"><span id="1-15">16</span></td>
+    <td class="day"><span id="1-16">17</span></td>
+    <td class="day"><span id="1-17">18</span></td>
+    <td class="day"><span id="1-18">19</span></td>
+    <td class="day"><span id="1-19">20</span></td>
+    <td class="day"><span id="1-20">21</span></td></tr><tr>
+    <td class="day"><span id="1-21">22</span></td>
+    <td class="day"><span id="1-22">23</span></td>
+    <td class="day"><span id="1-23">24</span></td>
+    <td class="day"><span id="1-24">25</span></td>
+    <td class="day"><span id="1-25">26</span></td>
+    <td class="day"><span id="1-26">27</span></td>
+    <td class="day"><span id="1-27">28</span></td></tr><tr>
+    <td class="day"><span id="1-28">29</span></td>
+    <td class="day"><span id="1-29">30</span></td>
+    <td class="day"><span id="1-30">31</span></td>
+    <td class="day"><span id="1-31">1</span></td>
+    <td class="day"><span id="1-32">2</span></td>
+    <td class="day"><span id="1-33">3</span></td>
+    <td class="day"><span id="1-34">4</span></td></tr><tr>
+    <td class="day"><span id="1-35">5</span></td>
+    <td class="day"><span id="1-36">6</span></td>
+    <td class="day"><span id="1-37">7</span></td>
+    <td class="day"><span id="1-38">8</span></td>
+    <td class="day"><span id="1-39">9</span></td>
+    <td class="day"><span id="1-40">10</span></td>
+    <td class="day"><span id="1-41">11</span></td></tr>
+</table></p>
+
+<p></p><p><h1>March <span id="2Text">2021</span></h1></p>
+<p><table class="month">
+  <tr>
+    <th>Sunday</th>
+    <th>Monday</th>
+    <th>Tuesday</th>
+    <th>Wednesday</th>
+    <th>Thursday</th>
+    <th>Friday</th>
+    <th>Saturday</th></tr><tr>
+    <td class="day"><span id="2-0">1</span></td>
+    <td class="day"><span id="2-1">2</span></td>
+    <td class="day"><span id="2-2">3</span></td>
+    <td class="day"><span id="2-3">4</span></td>
+    <td class="day"><span id="2-4">5</span></td>
+    <td class="day"><span id="2-5">6</span></td>
+    <td class="day"><span id="2-6">7</span></td></tr><tr>
+    <td class="day"><span id="2-7">8</span></td>
+    <td class="day"><span id="2-8">9</span></td>
+    <td class="day"><span id="2-9">10</span></td>
+    <td class="day"><span id="2-10">11</span></td>
+    <td class="day"><span id="2-11">12</span></td>
+    <td class="day"><span id="2-12">13</span></td>
+    <td class="day"><span id="2-13">14</span></td></tr><tr>
+    <td class="day"><span id="2-14">15</span></td>
+    <td class="day"><span id="2-15">16</span></td>
+    <td class="day"><span id="2-16">17</span></td>
+    <td class="day"><span id="2-17">18</span></td>
+    <td class="day"><span id="2-18">19</span></td>
+    <td class="day"><span id="2-19">20</span></td>
+    <td class="day"><span id="2-20">21</span></td></tr><tr>
+    <td class="day"><span id="2-21">22</span></td>
+    <td class="day"><span id="2-22">23</span></td>
+    <td class="day"><span id="2-23">24</span></td>
+    <td class="day"><span id="2-24">25</span></td>
+    <td class="day"><span id="2-25">26</span></td>
+    <td class="day"><span id="2-26">27</span></td>
+    <td class="day"><span id="2-27">28</span></td></tr><tr>
+    <td class="day"><span id="2-28">29</span></td>
+    <td class="day"><span id="2-29">30</span></td>
+    <td class="day"><span id="2-30">31</span></td>
+    <td class="day"><span id="2-31">1</span></td>
+    <td class="day"><span id="2-32">2</span></td>
+    <td class="day"><span id="2-33">3</span></td>
+    <td class="day"><span id="2-34">4</span></td></tr><tr>
+    <td class="day"><span id="2-35">5</span></td>
+    <td class="day"><span id="2-36">6</span></td>
+    <td class="day"><span id="2-37">7</span></td>
+    <td class="day"><span id="2-38">8</span></td>
+    <td class="day"><span id="2-39">9</span></td>
+    <td class="day"><span id="2-40">10</span></td>
+    <td class="day"><span id="2-41">11</span></td></tr>
+</table>
+</p>
+
+<p></p><p><h1>April <span id="3Text">2021</h1></span></p>
+<p><table class="month">
+  <tr>
+    <th>Sunday</th>
+    <th>Monday</th>
+    <th>Tuesday</th>
+    <th>Wednesday</th>
+    <th>Thursday</th>
+    <th>Friday</th>
+    <th>Saturday</th></tr><tr>
+    <td class="day"><span id="3-0">1</span></td>
+    <td class="day"><span id="3-1">2</span></td>
+    <td class="day"><span id="3-2">3</span></td>
+    <td class="day"><span id="3-3">4</span></td>
+    <td class="day"><span id="3-4">5</span></td>
+    <td class="day"><span id="3-5">6</span></td>
+    <td class="day"><span id="3-6">7</span></td></tr><tr>
+    <td class="day"><span id="3-7">8</span></td>
+    <td class="day"><span id="3-8">9</span></td>
+    <td class="day"><span id="3-9">10</span></td>
+    <td class="day"><span id="3-10">11</span></td>
+    <td class="day"><span id="3-11">12</span></td>
+    <td class="day"><span id="3-12">13</span></td>
+    <td class="day"><span id="3-13">14</span></td></tr><tr>
+    <td class="day"><span id="3-14">15</span></td>
+    <td class="day"><span id="3-15">16</span></td>
+    <td class="day"><span id="3-16">17</span></td>
+    <td class="day"><span id="3-17">18</span></td>
+    <td class="day"><span id="3-18">19</span></td>
+    <td class="day"><span id="3-19">20</span></td>
+    <td class="day"><span id="3-20">21</span></td></tr><tr>
+    <td class="day"><span id="3-21">22</span></td>
+    <td class="day"><span id="3-22">23</span></td>
+    <td class="day"><span id="3-23">24</span></td>
+    <td class="day"><span id="3-24">25</span></td>
+    <td class="day"><span id="3-25">26</span></td>
+    <td class="day"><span id="3-26">27</span></td>
+    <td class="day"><span id="3-27">28</span></td></tr><tr>
+    <td class="day"><span id="3-28">29</span></td>
+    <td class="day"><span id="3-29">30</span></td>
+    <td class="day"><span id="3-30">31</span></td>
+    <td class="day"><span id="3-31">1</span></td>
+    <td class="day"><span id="3-32">2</span></td>
+    <td class="day"><span id="3-33">3</span></td>
+    <td class="day"><span id="3-34">4</span></td></tr><tr>
+    <td class="day"><span id="3-35">5</span></td>
+    <td class="day"><span id="3-36">6</span></td>
+    <td class="day"><span id="3-37">7</span></td>
+    <td class="day"><span id="3-38">8</span></td>
+    <td class="day"><span id="3-39">9</span></td>
+    <td class="day"><span id="3-40">10</span></td>
+    <td class="day"><span id="3-41">11</span></td></tr>
+</table>
+</p>
+
+<p></p><p><h1>May <span id="4Text">2021</h1></span></p>
+<p><table class="month">
+  <tr>
+    <th>Sunday</th>
+    <th>Monday</th>
+    <th>Tuesday</th>
+    <th>Wednesday</th>
+    <th>Thursday</th>
+    <th>Friday</th>
+    <th>Saturday</th></tr><tr>
+    <td class="day"><span id="4-0">1</span></td>
+    <td class="day"><span id="4-1">2</span></td>
+    <td class="day"><span id="4-2">3</span></td>
+    <td class="day"><span id="4-3">4</span></td>
+    <td class="day"><span id="4-4">5</span></td>
+    <td class="day"><span id="4-5">6</span></td>
+    <td class="day"><span id="4-6">7</span></td></tr><tr>
+    <td class="day"><span id="4-7">8</span></td>
+    <td class="day"><span id="4-8">9</span></td>
+    <td class="day"><span id="4-9">10</span></td>
+    <td class="day"><span id="4-10">11</span></td>
+    <td class="day"><span id="4-11">12</span></td>
+    <td class="day"><span id="4-12">13</span></td>
+    <td class="day"><span id="4-13">14</span></td></tr><tr>
+    <td class="day"><span id="4-14">15</span></td>
+    <td class="day"><span id="4-15">16</span></td>
+    <td class="day"><span id="4-16">17</span></td>
+    <td class="day"><span id="4-17">18</span></td>
+    <td class="day"><span id="4-18">19</span></td>
+    <td class="day"><span id="4-19">20</span></td>
+    <td class="day"><span id="4-20">21</span></td></tr><tr>
+    <td class="day"><span id="4-21">22</span></td>
+    <td class="day"><span id="4-22">23</span></td>
+    <td class="day"><span id="4-23">24</span></td>
+    <td class="day"><span id="4-24">25</span></td>
+    <td class="day"><span id="4-25">26</span></td>
+    <td class="day"><span id="4-26">27</span></td>
+    <td class="day"><span id="4-27">28</span></td></tr><tr>
+    <td class="day"><span id="4-28">29</span></td>
+    <td class="day"><span id="4-29">30</span></td>
+    <td class="day"><span id="4-30">31</span></td>
+    <td class="day"><span id="4-31">1</span></td>
+    <td class="day"><span id="4-32">2</span></td>
+    <td class="day"><span id="4-33">3</span></td>
+    <td class="day"><span id="4-34">4</span></td></tr><tr>
+    <td class="day"><span id="4-35">5</span></td>
+    <td class="day"><span id="4-36">6</span></td>
+    <td class="day"><span id="4-37">7</span></td>
+    <td class="day"><span id="4-38">8</span></td>
+    <td class="day"><span id="4-39">9</span></td>
+    <td class="day"><span id="4-40">10</span></td>
+    <td class="day"><span id="4-41">11</span></td></tr>
+</table>
+</p>
+
+<p></p><p><h1>June <span id="5Text">2021</h1></span></p>
+<p><table class="month">
+  <tr>
+    <th>Sunday</th>
+    <th>Monday</th>
+    <th>Tuesday</th>
+    <th>Wednesday</th>
+    <th>Thursday</th>
+    <th>Friday</th>
+    <th>Saturday</th></tr><tr>
+    <td class="day"><span id="5-0">1</span></td>
+    <td class="day"><span id="5-1">2</span></td>
+    <td class="day"><span id="5-2">3</span></td>
+    <td class="day"><span id="5-3">4</span></td>
+    <td class="day"><span id="5-4">5</span></td>
+    <td class="day"><span id="5-5">6</span></td>
+    <td class="day"><span id="5-6">7</span></td></tr><tr>
+    <td class="day"><span id="5-7">8</span></td>
+    <td class="day"><span id="5-8">9</span></td>
+    <td class="day"><span id="5-9">10</span></td>
+    <td class="day"><span id="5-10">11</span></td>
+    <td class="day"><span id="5-11">12</span></td>
+    <td class="day"><span id="5-12">13</span></td>
+    <td class="day"><span id="5-13">14</span></td></tr><tr>
+    <td class="day"><span id="5-14">15</span></td>
+    <td class="day"><span id="5-15">16</span></td>
+    <td class="day"><span id="5-16">17</span></td>
+    <td class="day"><span id="5-17">18</span></td>
+    <td class="day"><span id="5-18">19</span></td>
+    <td class="day"><span id="5-19">20</span></td>
+    <td class="day"><span id="5-20">21</span></td></tr><tr>
+    <td class="day"><span id="5-21">22</span></td>
+    <td class="day"><span id="5-22">23</span></td>
+    <td class="day"><span id="5-23">24</span></td>
+    <td class="day"><span id="5-24">25</span></td>
+    <td class="day"><span id="5-25">26</span></td>
+    <td class="day"><span id="5-26">27</span></td>
+    <td class="day"><span id="5-27">28</span></td></tr><tr>
+    <td class="day"><span id="5-28">29</span></td>
+    <td class="day"><span id="5-29">30</span></td>
+    <td class="day"><span id="5-30">31</span></td>
+    <td class="day"><span id="5-31">1</span></td>
+    <td class="day"><span id="5-32">2</span></td>
+    <td class="day"><span id="5-33">3</span></td>
+    <td class="day"><span id="5-34">4</span></td></tr><tr>
+    <td class="day"><span id="5-35">5</span></td>
+    <td class="day"><span id="5-36">6</span></td>
+    <td class="day"><span id="5-37">7</span></td>
+    <td class="day"><span id="5-38">8</span></td>
+    <td class="day"><span id="5-39">9</span></td>
+    <td class="day"><span id="5-40">10</span></td>
+    <td class="day"><span id="5-41">11</span></td></tr>
+</table>
+</p>
+
+<p></p><p><h1>July <span id="6Text">2021</h1></span></p>
+<p><table class="month">
+  <tr>
+    <th>Sunday</th>
+    <th>Monday</th>
+    <th>Tuesday</th>
+    <th>Wednesday</th>
+    <th>Thursday</th>
+    <th>Friday</th>
+    <th>Saturday</th></tr><tr>
+    <td class="day"><span id="6-0">1</span></td>
+    <td class="day"><span id="6-1">2</span></td>
+    <td class="day"><span id="6-2">3</span></td>
+    <td class="day"><span id="6-3">4</span></td>
+    <td class="day"><span id="6-4">5</span></td>
+    <td class="day"><span id="6-5">6</span></td>
+    <td class="day"><span id="6-6">7</span></td></tr><tr>
+    <td class="day"><span id="6-7">8</span></td>
+    <td class="day"><span id="6-8">9</span></td>
+    <td class="day"><span id="6-9">10</span></td>
+    <td class="day"><span id="6-10">11</span></td>
+    <td class="day"><span id="6-11">12</span></td>
+    <td class="day"><span id="6-12">13</span></td>
+    <td class="day"><span id="6-13">14</span></td></tr><tr>
+    <td class="day"><span id="6-14">15</span></td>
+    <td class="day"><span id="6-15">16</span></td>
+    <td class="day"><span id="6-16">17</span></td>
+    <td class="day"><span id="6-17">18</span></td>
+    <td class="day"><span id="6-18">19</span></td>
+    <td class="day"><span id="6-19">20</span></td>
+    <td class="day"><span id="6-20">21</span></td></tr><tr>
+    <td class="day"><span id="6-21">22</span></td>
+    <td class="day"><span id="6-22">23</span></td>
+    <td class="day"><span id="6-23">24</span></td>
+    <td class="day"><span id="6-24">25</span></td>
+    <td class="day"><span id="6-25">26</span></td>
+    <td class="day"><span id="6-26">27</span></td>
+    <td class="day"><span id="6-27">28</span></td></tr><tr>
+    <td class="day"><span id="6-28">29</span></td>
+    <td class="day"><span id="6-29">30</span></td>
+    <td class="day"><span id="6-30">31</span></td>
+    <td class="day"><span id="6-31">1</span></td>
+    <td class="day"><span id="6-32">2</span></td>
+    <td class="day"><span id="6-33">3</span></td>
+    <td class="day"><span id="6-34">4</span></td></tr><tr>
+    <td class="day"><span id="6-35">5</span></td>
+    <td class="day"><span id="6-36">6</span></td>
+    <td class="day"><span id="6-37">7</span></td>
+    <td class="day"><span id="6-38">8</span></td>
+    <td class="day"><span id="6-39">9</span></td>
+    <td class="day"><span id="6-40">10</span></td>
+    <td class="day"><span id="6-41">11</span></td></tr>
+</table>
+</p>
+
+<p></p><p><h1>August <span id="7Text">2021</h1></span></p>
+<p><table class="month">
+  <tr>
+    <th>Sunday</th>
+    <th>Monday</th>
+    <th>Tuesday</th>
+    <th>Wednesday</th>
+    <th>Thursday</th>
+    <th>Friday</th>
+    <th>Saturday</th></tr><tr>
+    <td class="day"><span id="7-0">1</span></td>
+    <td class="day"><span id="7-1">2</span></td>
+    <td class="day"><span id="7-2">3</span></td>
+    <td class="day"><span id="7-3">4</span></td>
+    <td class="day"><span id="7-4">5</span></td>
+    <td class="day"><span id="7-5">6</span></td>
+    <td class="day"><span id="7-6">7</span></td></tr><tr>
+    <td class="day"><span id="7-7">8</span></td>
+    <td class="day"><span id="7-8">9</span></td>
+    <td class="day"><span id="7-9">10</span></td>
+    <td class="day"><span id="7-10">11</span></td>
+    <td class="day"><span id="7-11">12</span></td>
+    <td class="day"><span id="7-12">13</span></td>
+    <td class="day"><span id="7-13">14</span></td></tr><tr>
+    <td class="day"><span id="7-14">15</span></td>
+    <td class="day"><span id="7-15">16</span></td>
+    <td class="day"><span id="7-16">17</span></td>
+    <td class="day"><span id="7-17">18</span></td>
+    <td class="day"><span id="7-18">19</span></td>
+    <td class="day"><span id="7-19">20</span></td>
+    <td class="day"><span id="7-20">21</span></td></tr><tr>
+    <td class="day"><span id="7-21">22</span></td>
+    <td class="day"><span id="7-22">23</span></td>
+    <td class="day"><span id="7-23">24</span></td>
+    <td class="day"><span id="7-24">25</span></td>
+    <td class="day"><span id="7-25">26</span></td>
+    <td class="day"><span id="7-26">27</span></td>
+    <td class="day"><span id="7-27">28</span></td></tr><tr>
+    <td class="day"><span id="7-28">29</span></td>
+    <td class="day"><span id="7-29">30</span></td>
+    <td class="day"><span id="7-30">31</span></td>
+    <td class="day"><span id="7-31">1</span></td>
+    <td class="day"><span id="7-32">2</span></td>
+    <td class="day"><span id="7-33">3</span></td>
+    <td class="day"><span id="7-34">4</span></td></tr><tr>
+    <td class="day"><span id="7-35">5</span></td>
+    <td class="day"><span id="7-36">6</span></td>
+    <td class="day"><span id="7-37">7</span></td>
+    <td class="day"><span id="7-38">8</span></td>
+    <td class="day"><span id="7-39">9</span></td>
+    <td class="day"><span id="7-40">10</span></td>
+    <td class="day"><span id="7-41">11</span></td></tr>
+</table>
+</p>
+
+<p></p><p><h1>September <span id="8Text">2021</h1></span></p>
+<p><table class="month">
+  <tr>
+    <th>Sunday</th>
+    <th>Monday</th>
+    <th>Tuesday</th>
+    <th>Wednesday</th>
+    <th>Thursday</th>
+    <th>Friday</th>
+    <th>Saturday</th></tr><tr>
+    <td class="day"><span id="8-0">1</span></td>
+    <td class="day"><span id="8-1">2</span></td>
+    <td class="day"><span id="8-2">3</span></td>
+    <td class="day"><span id="8-3">4</span></td>
+    <td class="day"><span id="8-4">5</span></td>
+    <td class="day"><span id="8-5">6</span></td>
+    <td class="day"><span id="8-6">7</span></td></tr><tr>
+    <td class="day"><span id="8-7">8</span></td>
+    <td class="day"><span id="8-8">9</span></td>
+    <td class="day"><span id="8-9">10</span></td>
+    <td class="day"><span id="8-10">11</span></td>
+    <td class="day"><span id="8-11">12</span></td>
+    <td class="day"><span id="8-12">13</span></td>
+    <td class="day"><span id="8-13">14</span></td></tr><tr>
+    <td class="day"><span id="8-14">15</span></td>
+    <td class="day"><span id="8-15">16</span></td>
+    <td class="day"><span id="8-16">17</span></td>
+    <td class="day"><span id="8-17">18</span></td>
+    <td class="day"><span id="8-18">19</span></td>
+    <td class="day"><span id="8-19">20</span></td>
+    <td class="day"><span id="8-20">21</span></td></tr><tr>
+    <td class="day"><span id="8-21">22</span></td>
+    <td class="day"><span id="8-22">23</span></td>
+    <td class="day"><span id="8-23">24</span></td>
+    <td class="day"><span id="8-24">25</span></td>
+    <td class="day"><span id="8-25">26</span></td>
+    <td class="day"><span id="8-26">27</span></td>
+    <td class="day"><span id="8-27">28</span></td></tr><tr>
+    <td class="day"><span id="8-28">29</span></td>
+    <td class="day"><span id="8-29">30</span></td>
+    <td class="day"><span id="8-30">31</span></td>
+    <td class="day"><span id="8-31">1</span></td>
+    <td class="day"><span id="8-32">2</span></td>
+    <td class="day"><span id="8-33">3</span></td>
+    <td class="day"><span id="8-34">4</span></td></tr><tr>
+    <td class="day"><span id="8-35">5</span></td>
+    <td class="day"><span id="8-36">6</span></td>
+    <td class="day"><span id="8-37">7</span></td>
+    <td class="day"><span id="8-38">8</span></td>
+    <td class="day"><span id="8-39">9</span></td>
+    <td class="day"><span id="8-40">10</span></td>
+    <td class="day"><span id="8-41">11</span></td></tr>
+</table>
+</p>
+
+<p></p><p><h1>October <span id="9Text">2021</h1></span></p>
+<p><table class="month">
+  <tr>
+    <th>Sunday</th>
+    <th>Monday</th>
+    <th>Tuesday</th>
+    <th>Wednesday</th>
+    <th>Thursday</th>
+    <th>Friday</th>
+    <th>Saturday</th></tr><tr>
+    <td class="day"><span id="9-0">1</span></td>
+    <td class="day"><span id="9-1">2</span></td>
+    <td class="day"><span id="9-2">3</span></td>
+    <td class="day"><span id="9-3">4</span></td>
+    <td class="day"><span id="9-4">5</span></td>
+    <td class="day"><span id="9-5">6</span></td>
+    <td class="day"><span id="9-6">7</span></td></tr><tr>
+    <td class="day"><span id="9-7">8</span></td>
+    <td class="day"><span id="9-8">9</span></td>
+    <td class="day"><span id="9-9">10</span></td>
+    <td class="day"><span id="9-10">11</span></td>
+    <td class="day"><span id="9-11">12</span></td>
+    <td class="day"><span id="9-12">13</span></td>
+    <td class="day"><span id="9-13">14</span></td></tr><tr>
+    <td class="day"><span id="9-14">15</span></td>
+    <td class="day"><span id="9-15">16</span></td>
+    <td class="day"><span id="9-16">17</span></td>
+    <td class="day"><span id="9-17">18</span></td>
+    <td class="day"><span id="9-18">19</span></td>
+    <td class="day"><span id="9-19">20</span></td>
+    <td class="day"><span id="9-20">21</span></td></tr><tr>
+    <td class="day"><span id="9-21">22</span></td>
+    <td class="day"><span id="9-22">23</span></td>
+    <td class="day"><span id="9-23">24</span></td>
+    <td class="day"><span id="9-24">25</span></td>
+    <td class="day"><span id="9-25">26</span></td>
+    <td class="day"><span id="9-26">27</span></td>
+    <td class="day"><span id="9-27">28</span></td></tr><tr>
+    <td class="day"><span id="9-28">29</span></td>
+    <td class="day"><span id="9-29">30</span></td>
+    <td class="day"><span id="9-30">31</span></td>
+    <td class="day"><span id="9-31">1</span></td>
+    <td class="day"><span id="9-32">2</span></td>
+    <td class="day"><span id="9-33">3</span></td>
+    <td class="day"><span id="9-34">4</span></td></tr><tr>
+    <td class="day"><span id="9-35">5</span></td>
+    <td class="day"><span id="9-36">6</span></td>
+    <td class="day"><span id="9-37">7</span></td>
+    <td class="day"><span id="9-38">8</span></td>
+    <td class="day"><span id="9-39">9</span></td>
+    <td class="day"><span id="9-40">10</span></td>
+    <td class="day"><span id="9-41">11</span></td></tr>
+</table>
+</p>
+
+<p></p><p><h1>November <span id="10Text">2021</h1></span></p>
+<p><table class="month">
+  <tr>
+    <th>Sunday</th>
+    <th>Monday</th>
+    <th>Tuesday</th>
+    <th>Wednesday</th>
+    <th>Thursday</th>
+    <th>Friday</th>
+    <th>Saturday</th></tr><tr>
+    <td class="day"><span id="10-0">1</span></td>
+    <td class="day"><span id="10-1">2</span></td>
+    <td class="day"><span id="10-2">3</span></td>
+    <td class="day"><span id="10-3">4</span></td>
+    <td class="day"><span id="10-4">5</span></td>
+    <td class="day"><span id="10-5">6</span></td>
+    <td class="day"><span id="10-6">7</span></td></tr><tr>
+    <td class="day"><span id="10-7">8</span></td>
+    <td class="day"><span id="10-8">9</span></td>
+    <td class="day"><span id="10-9">10</span></td>
+    <td class="day"><span id="10-10">11</span></td>
+    <td class="day"><span id="10-11">12</span></td>
+    <td class="day"><span id="10-12">13</span></td>
+    <td class="day"><span id="10-13">14</span></td></tr><tr>
+    <td class="day"><span id="10-14">15</span></td>
+    <td class="day"><span id="10-15">16</span></td>
+    <td class="day"><span id="10-16">17</span></td>
+    <td class="day"><span id="10-17">18</span></td>
+    <td class="day"><span id="10-18">19</span></td>
+    <td class="day"><span id="10-19">20</span></td>
+    <td class="day"><span id="10-20">21</span></td></tr><tr>
+    <td class="day"><span id="10-21">22</span></td>
+    <td class="day"><span id="10-22">23</span></td>
+    <td class="day"><span id="10-23">24</span></td>
+    <td class="day"><span id="10-24">25</span></td>
+    <td class="day"><span id="10-25">26</span></td>
+    <td class="day"><span id="10-26">27</span></td>
+    <td class="day"><span id="10-27">28</span></td></tr><tr>
+    <td class="day"><span id="10-28">29</span></td>
+    <td class="day"><span id="10-29">30</span></td>
+    <td class="day"><span id="10-30">31</span></td>
+    <td class="day"><span id="10-31">1</span></td>
+    <td class="day"><span id="10-32">2</span></td>
+    <td class="day"><span id="10-33">3</span></td>
+    <td class="day"><span id="10-34">4</span></td></tr><tr>
+    <td class="day"><span id="10-35">5</span></td>
+    <td class="day"><span id="10-36">6</span></td>
+    <td class="day"><span id="10-37">7</span></td>
+    <td class="day"><span id="10-38">8</span></td>
+    <td class="day"><span id="10-39">9</span></td>
+    <td class="day"><span id="10-40">10</span></td>
+    <td class="day"><span id="10-41">11</span></td></tr>
+</table>
+</p>
+
+<p></p><p><h1>December <span id="11Text">2021</h1></span></p>
+<p><table class="month">
+  <tr>
+    <th>Sunday</th>
+    <th>Monday</th>
+    <th>Tuesday</th>
+    <th>Wednesday</th>
+    <th>Thursday</th>
+    <th>Friday</th>
+    <th>Saturday</th></tr><tr>
+    <td class="day"><span id="11-0">1</span></td>
+    <td class="day"><span id="11-1">2</span></td>
+    <td class="day"><span id="11-2">3</span></td>
+    <td class="day"><span id="11-3">4</span></td>
+    <td class="day"><span id="11-4">5</span></td>
+    <td class="day"><span id="11-5">6</span></td>
+    <td class="day"><span id="11-6">7</span></td></tr><tr>
+    <td class="day"><span id="11-7">8</span></td>
+    <td class="day"><span id="11-8">9</span></td>
+    <td class="day"><span id="11-9">10</span></td>
+    <td class="day"><span id="11-10">11</span></td>
+    <td class="day"><span id="11-11">12</span></td>
+    <td class="day"><span id="11-12">13</span></td>
+    <td class="day"><span id="11-13">14</span></td></tr><tr>
+    <td class="day"><span id="11-14">15</span></td>
+    <td class="day"><span id="11-15">16</span></td>
+    <td class="day"><span id="11-16">17</span></td>
+    <td class="day"><span id="11-17">18</span></td>
+    <td class="day"><span id="11-18">19</span></td>
+    <td class="day"><span id="11-19">20</span></td>
+    <td class="day"><span id="11-20">21</span></td></tr><tr>
+    <td class="day"><span id="11-21">22</span></td>
+    <td class="day"><span id="11-22">23</span></td>
+    <td class="day"><span id="11-23">24</span></td>
+    <td class="day"><span id="11-24">25</span></td>
+    <td class="day"><span id="11-25">26</span></td>
+    <td class="day"><span id="11-26">27</span></td>
+    <td class="day"><span id="11-27">28</span></td></tr><tr>
+    <td class="day"><span id="11-28">29</span></td>
+    <td class="day"><span id="11-29">30</span></td>
+    <td class="day"><span id="11-30">31</span></td>
+    <td class="day"><span id="11-31">1</span></td>
+    <td class="day"><span id="11-32">2</span></td>
+    <td class="day"><span id="11-33">3</span></td>
+    <td class="day"><span id="11-34">4</span></td></tr><tr>
+    <td class="day"><span id="11-35">5</span></td>
+    <td class="day"><span id="11-36">6</span></td>
+    <td class="day"><span id="11-37">7</span></td>
+    <td class="day"><span id="11-38">8</span></td>
+    <td class="day"><span id="11-39">9</span></td>
+    <td class="day"><span id="11-40">10</span></td>
+    <td class="day"><span id="11-41">11</span></td></tr>
+</table>
+</p></div>
+</body>
+
+<script>
+function initDate() {
+  let date = new Date(Date.now());
+  document.getElementById("year").value = date.getFullYear();
+}
+
+function updateYear() {
+  let year = document.getElementById("year").value
+  let date = new Date("1/1/"+year);
+  year = date.getFullYear();
+  let leap = leapYear(year);
+  let start = date.getDay();
+  let month = [
+    (start)%7,        (start+3)%7,      (start+3+leap)%7, (start+6+leap)%7,
+    (start+1+leap)%7, (start+4+leap)%7, (start+6+leap)%7, (start+2+leap)%7,
+    (start+5+leap)%7, (start+leap)%7,   (start+3+leap)%7, (start+5+leap)%7 ];
+  let monthLen = [31,28+leap,31,30,31,30,31,31,30,31,30,31];
+  for (let i=0; i<12; i++) {
+    document.getElementById(i+"Text").innerHTML = year;
+    for (let j=0; j<42; j++) {
+      if (j<month[i]) {
+        document.getElementById(i+"-"+j).innerHTML = "";
+      } else {
+        if (j<monthLen[i]+month[i]) {
+          document.getElementById(i+"-"+j).innerHTML = j-month[i]+1;
+        } else {
+          document.getElementById(i+"-"+j).innerHTML = "";
+        }
+      }
+    }
+  }
+
+  //document.getElementById(x+"-"+y).innerHTML = year;
+}
+
+function leapYear(y) {
+  return ((y % 4 == 0) && (y % 100 != 0)) || (y % 400 == 0);
+}
+
+function copyCalendar() {
+  var div = document.getElementById('copyText');
+  //div.contentEditable = true;
+  if (document.body.createTextRange) {
+        range = document.body.createTextRange();
+        range.moveToElementText(div);
+        range.select();
+    } else if (window.getSelection) {
+        selection = window.getSelection();
+        range = document.createRange();
+        range.selectNodeContents(div);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+}
+
+function setTableWidth() {
+      let newWidth = document.getElementById("width").value;
+      let units = document.getElementById("units").value;
+      var calendars = document.getElementsByClassName("month");
+      var cells = document.getElementsByClassName("day");
+      for (let i=0; i<calendars.length; i++) {
+            calendars[i].style.width = newWidth+""+units;
+      }
+      for (let i=0; i<cells.length; i++) {
+            cells[i].style.width = (newWidth/7)+""+units;
+      }
+
+}
+
+function setTableHeight() {
+      let newHeight = document.getElementById("height").value;
+      let units = document.getElementById("units").value;
+      let cells= document.getElementsByClassName("day");
+      for (let i=0; i<cells.length; i++) {
+            cells[i].style.height = newHeight+""+units;
+      }
+
+}
+
+function spacer() {
+
+  let copy = document.getElementById("copyText");
+  var promise = navigator.clipboard.writeText(copy.textContent);
+  //Copy the entier calendar
+}
+
+initDate();
+updateYear();
+</script>
+
+</html>

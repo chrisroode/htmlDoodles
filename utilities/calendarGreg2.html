@@ -1,0 +1,163 @@
+<!doctype html>
+<!-- ===================================================
+ Calendar Generator
+========================================================
+COPYRIGHT
+The source in this file is protected under the MIT License
+Please read the details from one of the many sources on <thead>
+internet before doing things.
+
+DESCRIPTION
+This single file document uses Javascript, HTML, and CSS to
+create a minimal interface calendar generator.  The calendar
+can be copy pasted, with the intended destination be a word
+processor, allowing for simplification of setting up similar
+documents through other more complicated means.
+
+The other intention of these types of
+
+You are free to make modifications to this document for your
+own personalization, as long as you follow the MIT license
+terms stated above. Highlighting the code is provided as-is
+with no liability or warrantee provided by Chris Roode, the
+original author.
+
+For details on how this code was created, feel free to watch
+the associated youtube video:
+
+and find the original source on github:
+
+
+Hope this helps
+-->
+
+
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <title>Calendar Maker</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Calendar Generator">
+  <meta name="author" content="Chris Roode">
+  <style>
+  body {
+    margin-left: 40px;margin-top: 40px;background-color: #ffffff;}
+  table {
+    width: 7in;border: 1px solid black;border-collapse: collapse;}
+  td {
+    border: 1px solid black;border-collapse: collapse;
+    vertical-align: top;text-align: left;}
+  th {
+    border: 0px solid black;border-collapse: collapse;}
+  </style>
+</head>
+<body><p><h1>Calendar Greg<svg width=50 height=50>
+        <circle cx=25 cy=25 r=24 stroke="#603000" stroke-width=2 fill="#ff8000"
+        /><line y1="23" x1="12" y2="23" x2="23" stroke="#603000" stroke-width=2
+        /><line y1="23" x1="27" y2="23" x2="38" stroke="#603000" stroke-width=2
+        /><circle cx=21 cy=24 r=2 fill="#603000" /><circle cx=34 cy=24 r=2
+        fill="#603000" /><path d="M16 38 l14 0 l4 -2" stroke="#603000"
+        stroke-width=2 fill="#ff8000" /></svg></h1></p>
+<p>
+Enter Year: <input type="number" id="year" oninput="updateYear()" min="1000"
+max="9999"> Calendar Width: <input type="number" id="width" value="7"
+oninput="setTableWidth()" min="0.5" max="100.0" step="0.125"> Cell Height:
+<input type="number" id="height" value="1" oninput="setTableHeight()"
+min="0.25" max="100.0" step="0.125"><select id="units"><option value="in">in
+</option><option value="cm">cm</option></select><input type="button" id="copy"
+value="select" onclick="copyCalendar()"> Then press ctrl->c to copy
+</p>
+<div id="copyText"></div>
+</body>
+<script>
+const monthName = ["January","February","March",
+                   "April",  "May",     "June",
+                   "July",   "August",  "September", "October","November","December"];
+const weekdayName = ["Sunday","Monday","Tuesday","Wednesday",
+                     "Thursday","Friday","Saturday"];
+function initDate() {
+  let date = new Date(Date.now());
+  document.getElementById("year").value = date.getFullYear();
+}
+function updateYear() {
+    let calendar = document.getElementById("copyText");
+    let year = document.getElementById("year").value
+    let date = new Date("1/1/"+year);
+    year = date.getFullYear();
+    let leap = leapYear(year);
+    let start = date.getDay();
+    let month = [(start)%7,        (start+3)%7,      (start+3+leap)%7,
+                 (start+6+leap)%7, (start+1+leap)%7, (start+4+leap)%7,
+                 (start+6+leap)%7, (start+2+leap)%7, (start+5+leap)%7,
+                 (start+leap)%7,   (start+3+leap)%7, (start+5+leap)%7];
+    let monthLen = [31,28+leap,31,30,31,30,31,31,30,31,30,31];
+    calendar.innerHTML = "";
+    monthName.forEach((e,i)=>{
+        let monthHeader = document.createElement('p');
+        monthHeader.innerHTML = "<h1>"+e+" "+year+"</h1>";
+        calendar.appendChild(monthHeader);
+        let monthTable = document.createElement('table');
+        monthTable.className = "month";
+        let weekHeader = document.createElement('tr');
+        weekdayName.forEach((f,j) => {
+            let weekdaySlot = document.createElement("th");
+            weekdaySlot.innerHTML = f;
+            weekHeader.appendChild(weekdaySlot);});
+        calendar.appendChild(weekHeader);
+        let dayCounter = 1-month[i];
+        do {
+            let newWeek = document.createElement("tr");
+            for (let k=0;k<7;k++) {
+                let dayElement = document.createElement("td");
+                dayElement.className = "day";
+                if (dayCounter>0 && dayCounter<=monthLen[i]) {
+                    dayElement.innerHTML = dayCounter;
+                }
+                newWeek.appendChild(dayElement);
+                dayCounter++;
+            }
+            calendar.appendChild(newWeek);
+        } while (dayCounter < monthLen[i]+1);
+    });
+    setTableWidth();setTableHeight();
+}
+function leapYear(y) {
+  return ((y % 4 == 0) && (y % 100 != 0)) || (y % 400 == 0);
+}
+function copyCalendar() {
+  var div = document.getElementById('copyText');
+  //div.contentEditable = true;
+  if (document.body.createTextRange) {
+        range = document.body.createTextRange();
+        range.moveToElementText(div);
+        range.select();
+    } else if (window.getSelection) {
+        selection = window.getSelection();
+        range = document.createRange();
+        range.selectNodeContents(div);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+}
+function setTableWidth() {
+      let newWidth = document.getElementById("width").value;
+      let units = document.getElementById("units").value;
+      var calendars = document.getElementsByClassName("month");
+      var cells = document.getElementsByClassName("day");
+      for (let i=0; i<calendars.length; i++) {
+          calendars[i].style.width = newWidth+""+units;}
+      for (let i=0; i<cells.length; i++) {
+          cells[i].style.width = (newWidth/7)+""+units;}
+}
+function setTableHeight() {
+      let newHeight = document.getElementById("height").value;
+      let units = document.getElementById("units").value;
+      let cells= document.getElementsByClassName("day");
+      for (let i=0; i<cells.length; i++) {
+            cells[i].style.height = newHeight+""+units;}
+}
+function spacer() {
+  let copy = document.getElementById("copyText");
+  var promise = navigator.clipboard.writeText(copy.textContent);
+}
+initDate();updateYear();
+</script></html>
